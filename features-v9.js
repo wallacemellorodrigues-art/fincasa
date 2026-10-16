@@ -189,6 +189,19 @@ function openQuick(){
 }
 function hook(){const old=window.renderAll;if(typeof old==='function'&&!old.__f9){const wrapped=function(){const ret=old.apply(this,arguments);renderBank();return ret};wrapped.__f9=true;window.renderAll=wrapped} }
 if(typeof document==='undefined'){if(typeof module!=='undefined')module.exports={amountParse,toDate,rowsFromSheet,keyMovement,classify,detectColumns};return}
+function addInstallControl(){
+ let captured=null;
+ window.addEventListener('beforeinstallprompt',event=>{
+  event.preventDefault();captured=event;
+  if(window.matchMedia('(display-mode: standalone)').matches)return;
+  let btn=document.getElementById('f9InstallApp');
+  if(!btn){btn=document.createElement('button');btn.id='f9InstallApp';btn.className='f9-install-btn';btn.type='button';btn.textContent='⬇ Instalar FinCasa';btn.style.cssText='position:fixed;right:24px;bottom:86px;z-index:121;background:#fff;color:#214f91;border:1px solid #d4e0f2;border-radius:24px;padding:11px 16px;font-weight:800;box-shadow:0 8px 20px #122b4a29;cursor:pointer';document.body.appendChild(btn)}
+  btn.onclick=async()=>{if(!captured)return;const prompt=captured;captured=null;btn.disabled=true;try{await prompt.prompt();await prompt.userChoice}catch(e){console.warn('Instalação FinCasa:',e)}finally{btn.remove()}};
+ });
+ window.addEventListener('appinstalled',()=>document.getElementById('f9InstallApp')?.remove());
+}
+addInstallControl();
+
 mount();hook();if(safeState())renderBank();
  if(new URLSearchParams(location.search).get('app')==='1'&&typeof window.onCloudSignedIn==='function'){
   const oldLogin=window.onCloudSignedIn;window.onCloudSignedIn=async function(){const ret=await oldLogin.apply(this,arguments);if(typeof cloudHousehold!=='undefined'&&cloudHousehold)setTimeout(()=>openQuick(),40);return ret;}
