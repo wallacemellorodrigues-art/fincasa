@@ -18,5 +18,4 @@ jobs:
           node-version: '22'
       - run: node --check features-v9.js
       - run: node --test test/v9.test.cjs
-      - run: |
-          node -e "const fs=require('node:fs');const html=fs.readFileSync('index.html','utf8');for(const needle of ['features-v9.js','manifest.webmanifest','id=\"bankAccountsSection\"']){if(needle==='id=\"bankAccountsSection\"')continue;if(!html.includes(needle))process.exit(1)}if(/data:image\/[^"' ]+;base64,/.test(html.slice(html.indexOf('<body>'),html.indexOf('<script id=\"fincasa-data\"'))))process.exit(2)"
+      - run: node --test test/static.test.cjs
