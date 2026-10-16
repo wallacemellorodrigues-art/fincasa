@@ -118,7 +118,7 @@ async function rowsFromPdf(file){
  for(let i=1;i<=Math.min(pdf.numPages,100);i++){
   const page=await pdf.getPage(i),content=await page.getTextContent(),lines=new Map();
   for(const item of content.items||[]){if(!item.str)continue;const y=Math.round(item.transform?.[5]||0);if(!lines.has(y))lines.set(y,[]);lines.get(y).push({x:item.transform?.[4]||0,t:item.str})}
-  for(const ln of [...lines.entries()].sort((a,b)=>b[0]-a[0]).map(([y,v])=>v)){const str=ln.sort((a,b)=>a.x-b.x).map(x=>x.t).join(' ').replace(/\s+/g,' ').trim();const m=str.match(/(?:^|\s)(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+([+\-]?\s*(?:R\$\s*)?[\d.]+,\d{2})(?:\s*[DC])?(?:\s|$)/i);if(!m)continue;const d=toDate(m[1]),a=amountParse(m[3]);if(!d||!Number.isFinite(a)||!a)continue;const typ=/\sD(?:\s|$)/.test(str)?'debit':/\sC(?:\s|$)/.test(str)?'credit':'';rows.push({date:d,description:m[2].trim(),amount:typ==='debit'?-Math.abs(a):typ==='credit'?Math.abs(a):a,unknown:!typ&&!/^\s*[+\-]/.test(m[3])})}
+  for(const ln of [...lines.entries()].sort((a,b)=>b[0]-a[0]).map(([y,v])=>v)){const str=ln.sort((a,b)=>a.x-b.x).map(x=>x.t).join(' ').replace(/\s+/g,' ').trim();const m=str.match(/(?:^|\s)(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+([+\-]?\s*(?:R\$\s*)?[\d.]+,\d{2})(?:\s*[DC])?(?:\s|$)/i);if(!m)continue;const d=toDate(m[1]),a=amountParse(m[3]);if(!d||!Number.isFinite(a)||!a||!/\d{2}\/\d{2}\/\d{2,4}/.test(m[1]))continue;const typ=/\sD(?:\s|$)/.test(str)?'debit':/\sC(?:\s|$)/.test(str)?'credit':'';rows.push({date:d,description:m[2].trim(),amount:typ==='debit'?-Math.abs(a):typ==='credit'?Math.abs(a):a,unknown:!typ&&!/^\s*[+\-]/.test(m[3])})}
  }
  if(!rows.length)throw new Error('Nenhuma movimentação legível encontrada. PDF digitalizado/imagem ou layout não reconhecido; nenhuma linha foi importada.');
  return rows;
@@ -159,17 +159,18 @@ function commitImport(){
 }
 function matchesFor(row){
  const arr=row.amount<0?state.expenses:state.incomes;
- return arr.filter(x=>x.startMonth===row.date.slice(0,7)&&Math.abs((Number(x.amount)||0)-Math.abs(row.amount))<.015).slice(0,30);
+ return arr.filter(x=>(x.startMonth===row.date.slice(0,7)||(row.amount<0&&x.thirdPartyReimbursementPending))&&Math.abs((Number(x.amount)||0)-Math.abs(row.amount))<.015).slice(0,30);
 }
 function reviewMovement(id){
  initArrays();const t=state.bankMovements.find(x=>x.id===id);if(!t)return;
  const matches=matchesFor(t),choices=matches.map(x=>`<option value="${h(x.id)}">${h(x.description)} — ${reais(x.amount)}</option>`).join('');
  const defaultAction=t.classification==='card_payment'?'card_payment':t.classification==='transfer'?'transfer':t.classification==='reimbursement'?'reimbursement':t.amount<0?'expense':'income';
  openModal('Conciliar movimentação',`<div class="f9-warning"><b>${h(t.description)}</b><br>${h(t.date)} • ${reais(t.amount)}<br>Vincular ou registrar uma vez: o pagamento de uma fatura não é uma segunda despesa.</div><form id="f9ReviewForm"><div class="form-grid"><div class="field"><label>Natureza</label><select name="action" id="f9Act"><option value="pending">Manter pendente</option><option value="match">Vincular a lançamento existente</option><option value="expense" ${defaultAction==='expense'?'selected':''}>Nova despesa</option><option value="income" ${defaultAction==='income'?'selected':''}>Nova receita</option><option value="card_payment" ${defaultAction==='card_payment'?'selected':''}>Pagamento de fatura (sem duplicar)</option><option value="transfer" ${defaultAction==='transfer'?'selected':''}>Transferência entre contas</option><option value="reimbursement" ${defaultAction==='reimbursement'?'selected':''}>Reembolso / liquidação já registrada</option><option value="ignore">Ignorar no orçamento</option></select></div><div class="field"><label>Vincular existente, se aplicável</label><select name="match"><option value="">Selecione…</option>${choices}</select></div><div class="field"><label>Categoria para nova despesa</label><select name="category">${CATEGORIES.map(c=>`<option ${c===category(t.description)?'selected':''}>${h(c)}</option>`).join('')}</select></div></div><div class="form-actions"><button type="button" class="btn" onclick="closeModal()">Cancelar</button><button type="submit" class="btn accent">Salvar conciliação</button></div></form>`);
- $q('f9ReviewForm').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),action=f.get('action');if(action==='match'&&!f.get('match'))return notify('Escolha um lançamento para vincular.','error');
+ $q('f9ReviewForm').onsubmit=e=>{e.preventDefault();const f=new FormData(e.target),action=f.get('action');if((action==='match'||action==='reimbursement')&&!f.get('match'))return notify('Escolha a despesa que este movimento quita.','error');
  if(action==='expense'&&t.amount>0||action==='income'&&t.amount<0)return notify('A direção do movimento não corresponde à classificação.','error');
  if(t.status==='reconciled')return notify('Este movimento já foi conciliado. Não será contabilizado novamente.','error');
  if(action==='match'){const row=matches.find(x=>x.id===f.get('match'));if(!row)return notify('Lançamento não encontrado.','error');const kind=t.amount<0?'expense':'income';t.linkedKind=kind;t.linkedId=row.id;setActualRecord(kind,row.id,t.date.slice(0,7),Math.abs(t.amount),t.date,'Conciliado pelo extrato bancário')}
+ if(action==='reimbursement'){const original=state.expenses.find(x=>x.id===f.get('match'));if(!original)return notify('Despesa para reembolso não encontrada.','error');original.thirdPartyReimbursementPending=false;original.reimbursedAt=t.date;t.linkedKind='expense';t.linkedId=original.id;}
  if(action==='expense'||action==='income'){const kind=action,person=state.bankAccounts.find(a=>a.id===t.accountId)?.owner||'Casa',id=newid(kind==='expense'?'exp':'inc'),obj=kind==='expense'?{id,description:t.description,category:f.get('category'),owner:person,amount:Math.abs(t.amount),type:'variable',recurrence:'once',startMonth:t.date.slice(0,7),endMonth:'',dueDay:Number(t.date.slice(-2)),bankMovementId:t.id}:{id,description:t.description,person,amount:Math.abs(t.amount),recurrence:'once',startMonth:t.date.slice(0,7),endMonth:'',bankMovementId:t.id};
  if(kind==='expense')state.expenses.push(obj);else state.incomes.push(obj);
  t.linkedKind=kind;t.linkedId=id;setActualRecord(kind,id,t.date.slice(0,7),Math.abs(t.amount),t.date,'Extrato bancário')}
@@ -189,4 +190,7 @@ function openQuick(){
 function hook(){const old=window.renderAll;if(typeof old==='function'&&!old.__f9){const wrapped=function(){const ret=old.apply(this,arguments);renderBank();return ret};wrapped.__f9=true;window.renderAll=wrapped} }
 if(typeof document==='undefined'){if(typeof module!=='undefined')module.exports={amountParse,toDate,rowsFromSheet,keyMovement,classify,detectColumns};return}
 mount();hook();if(safeState())renderBank();
+ if(new URLSearchParams(location.search).get('app')==='1'&&typeof window.onCloudSignedIn==='function'){
+  const oldLogin=window.onCloudSignedIn;window.onCloudSignedIn=async function(){const ret=await oldLogin.apply(this,arguments);if(typeof cloudHousehold!=='undefined'&&cloudHousehold)setTimeout(()=>openQuick(),40);return ret;}
+ }
 })();
