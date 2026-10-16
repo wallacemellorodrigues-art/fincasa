@@ -118,7 +118,7 @@ async function rowsFromPdf(file){
  for(let i=1;i<=Math.min(pdf.numPages,100);i++){
   const page=await pdf.getPage(i),content=await page.getTextContent(),lines=new Map();
   for(const item of content.items||[]){if(!item.str)continue;const y=Math.round(item.transform?.[5]||0);if(!lines.has(y))lines.set(y,[]);lines.get(y).push({x:item.transform?.[4]||0,t:item.str})}
-  for(const ln of [...lines.values()].sort((a,b)=>b[0].t-a[0].t)){const str=ln.sort((a,b)=>a.x-b.x).map(x=>x.t).join(' ').replace(/\s+/g,' ').trim();const m=str.match(/(?:^|\s)(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+([+\-]?\s*(?:R\$\s*)?[\d.]+,\d{2})(?:\s*[DC])?(?:\s|$)/i);if(!m)continue;const d=toDate(m[1]),a=amountParse(m[3]);if(!d||!Number.isFinite(a)||!a)continue;const typ=/\sD(?:\s|$)/.test(str)?'debit':/\sC(?:\s|$)/.test(str)?'credit':'';rows.push({date:d,description:m[2].trim(),amount:typ==='debit'?-Math.abs(a):typ==='credit'?Math.abs(a):a,unknown:!typ&&!/^\s*[+\-]/.test(m[3])})}
+  for(const ln of [...lines.entries()].sort((a,b)=>b[0]-a[0]).map(([y,v])=>v)){const str=ln.sort((a,b)=>a.x-b.x).map(x=>x.t).join(' ').replace(/\s+/g,' ').trim();const m=str.match(/(?:^|\s)(\d{2}\/\d{2}(?:\/\d{2,4})?)\s+(.+?)\s+([+\-]?\s*(?:R\$\s*)?[\d.]+,\d{2})(?:\s*[DC])?(?:\s|$)/i);if(!m)continue;const d=toDate(m[1]),a=amountParse(m[3]);if(!d||!Number.isFinite(a)||!a)continue;const typ=/\sD(?:\s|$)/.test(str)?'debit':/\sC(?:\s|$)/.test(str)?'credit':'';rows.push({date:d,description:m[2].trim(),amount:typ==='debit'?-Math.abs(a):typ==='credit'?Math.abs(a):a,unknown:!typ&&!/^\s*[+\-]/.test(m[3])})}
  }
  if(!rows.length)throw new Error('Nenhuma movimentação legível encontrada. PDF digitalizado/imagem ou layout não reconhecido; nenhuma linha foi importada.');
  return rows;
@@ -187,5 +187,6 @@ function openQuick(){
  closeModal();afterSave();notify('Lançamento salvo e sincronização solicitada.','success')};
 }
 function hook(){const old=window.renderAll;if(typeof old==='function'&&!old.__f9){const wrapped=function(){const ret=old.apply(this,arguments);renderBank();return ret};wrapped.__f9=true;window.renderAll=wrapped} }
+if(typeof document==='undefined'){if(typeof module!=='undefined')module.exports={amountParse,toDate,rowsFromSheet,keyMovement,classify,detectColumns};return}
 mount();hook();if(safeState())renderBank();
 })();
