@@ -1,7 +1,7 @@
 name: FinCasa v9 validation
 on:
   push:
-    branches: [feature/fincasa-v9-contas-mobile]
+    branches: [feature/fincasa-v10-mobile-notificacoes, main]
   pull_request:
     branches: [main]
 permissions:
@@ -20,3 +20,6 @@ jobs:
       - run: node --test test/v9.test.cjs
       - run: node --test test/static.test.cjs
       - run: node --test test/pwa.test.cjs
+      - run: node --check notifications-v10.js
+      - run: node --test test/notifications.test.cjs
+      - run: node --test test/mobile.test.cjs
