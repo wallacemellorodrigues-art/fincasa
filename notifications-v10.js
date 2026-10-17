@@ -32,7 +32,7 @@ function notifications(s,ym,now,advisorRisks=[]){
  const relevant=actuals.some(x=>x.date&&daysTo(x.date,now)>=0&&daysTo(x.date,now)<2)
   ||expenses.some(x=>x.quickDate&&daysTo(x.quickDate,now)>=0&&daysTo(x.quickDate,now)<2)
   ||mov.some(x=>x.importedAt&&daysTo(String(x.importedAt).slice(0,10),now)>=0&&daysTo(String(x.importedAt).slice(0,10),now)<2);
- if(!relevant)add('input-'+now.slice(0,7),'reminder','Hora de revisar os lançamentos','Não identifiquei despesas, receitas rápidas ou extratos registrados nos últimos 2 dias. Se houve movimentações, vale atualizá-las.','despesas',1);
+ if(!relevant)add('input-'+now,'reminder','Hora de revisar os lançamentos','Não identifiquei despesas, receitas rápidas ou extratos registrados nos últimos 2 dias. Se houve movimentações, vale atualizá-las.','despesas',1);
  if(card.length&&Number(now.slice(8,10))>=8&&!((s.imports||[]).some(x=>x.statementMonth===ym)))add('import-'+ym,'reminder','Revisar faturas do mês','Nenhuma importação de fatura desta competência foi identificada. Importe quando estiver disponível.','cartoes',1);
  for(const [i,r] of advisorRisks.slice(0,2).entries())if(r?.title)add('advisor-'+ym+'-'+i,'advisor',String(r.title),String(r.summary||'Confira a análise financeira deste mês.'),'inicio',2);
  return notices.sort((a,b)=>b.priority-a.priority||a.kind.localeCompare(b.kind)).slice(0,25);
@@ -96,7 +96,7 @@ function mount(){
   const head=document.createElement('div');head.className='fc-mobile-header';head.innerHTML='<div class="fc-mobile-logo" aria-label="WJ">WJ</div><div class="fc-mobile-welcome"><strong>Wallace &amp; Juliana</strong><small>Seu espaço financeiro</small></div>';
   top.prepend(head);
   const photo=document.createElement('img');photo.className='fc-mobile-photo';photo.alt='Foto do casal';photo.id='fcMobilePhoto';photo.hidden=true;head.appendChild(photo);
-  const bell=document.createElement('button');bell.className='fc-notice-btn';bell.type='button';bell.dataset.fcBell='1';bell.innerHTML='♧<span class="fc-notice-count" hidden>0</span>';bell.setAttribute('aria-label','Abrir avisos');bell.innerHTML='🔔<span class="fc-notice-count" hidden>0</span>';bell.onclick=openPanel;top.appendChild(bell);
+  const bell=document.createElement('button');bell.className='fc-notice-btn';bell.type='button';bell.dataset.fcBell='1';bell.setAttribute('aria-label','Abrir avisos');bell.innerHTML='🔔<span class="fc-notice-count" hidden>0</span>';bell.onclick=openPanel;top.appendChild(bell);
  }
  const nav=document.createElement('nav');nav.id='fcMobileNav';nav.className='fc-mobile-nav';nav.setAttribute('aria-label','Navegação do aplicativo');nav.innerHTML='<button type="button" data-fc-dest="inicio" class="active"><b>⌂</b>Início</button><button type="button" data-fc-dest="bankAccountsSection"><b>▣</b>Contas</button><button type="button" data-fc-dest="quick" class="fast"><b>＋</b>Lançar</button><button type="button" data-fc-dest="alerts"><b>♧</b>Avisos<span class="fc-notice-count" hidden>0</span></button>';
  document.body.append(nav);
