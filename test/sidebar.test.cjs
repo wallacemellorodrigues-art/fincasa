@@ -8,7 +8,7 @@ function element(name){
   add(x){classes.add(x)},remove(x){classes.delete(x)},contains(x){return classes.has(x)},
   toggle(x,on){if(on===undefined)on=!classes.has(x);on?classes.add(x):classes.delete(x);return on}
  },setAttribute(k,v){this.attributes[k]=v},addEventListener(ev,cb){this.events[ev]=cb},
- append(){},prepend(x){this.first=x},focus(){this.focused=true},inert:false,closest(){return null}};
+ append(...items){this.children=(this.children||[]).concat(items)},prepend(x){this.first=x},focus(){this.focused=true},inert:false,closest(){return null}};
 }
 function setup(width=390){
  const sidebar=element('sidebar'),toggle=element('toggle'),nav=element('nav'),body=element('body');
@@ -43,13 +43,12 @@ test('tocar no fundo fecha e devolve foco ao botão',()=>{
 });
 test('botão interno de fechar e tecla Escape recolhem menu',()=>{
  const a=setup();const close=a.sidebar.first;assert.equal(close.className,'fc-sidebar-close');
- const btn=close?.events?.click||null;
+ assert.ok(close.children?.[1], 'botão de fechar presente');
  a.sidebar.classList.add('open');a.observe();a.doc.events.keydown({key:'Escape',preventDefault(){}});
  assert.equal(a.sidebar.classList.contains('open'),false);
  a.sidebar.classList.add('open');a.observe();
- const closeButton=a.sidebar.first.childButton;
- // We verify the accessible close control exists through production source; mock append has no DOM child tracking.
- assert.match(source,/aria-label','Fechar menu'/);
+ const closeButton=a.sidebar.first.children[1];closeButton.events.click();
+ assert.equal(a.sidebar.classList.contains('open'),false);
 });
 test('navegar no app recolhe menu sem persistir estados financeiros',()=>{
  const a=setup();a.sidebar.classList.add('open');a.observe();a.nav.events.click();
