@@ -89,3 +89,5 @@
 /* Ajustes de hierarquia e estados invisíveis */
 #f9QuickForm [hidden]{display:none!important}
 @media(max-width:820px){body .top .tit,body .top .quick-nav,body .top .user-switch,body .top .mode-switch{display:none!important}body .toprow>.fc-mobile-header{order:-3}body .toprow>.fc-notice-btn{order:-2}body .toprow>.control:not(.quick-nav){order:1}body .toprow>#cloudSyncChip{order:2}body .toprow>.menu-toggle{order:-4}body .toprow>.month-state-chip{display:none!important}.fc-notice-btn{margin-left:auto}body .modal-body .fc-fast-amount input{background:transparent!important;border:0!important;padding:0!important;font-size:31px!important;min-height:48px!important;color:#1e4382!important}body .modal-body .fc-fast-amount input:focus{outline:0!important}body .modal-body .fc-fast-kind button{min-height:51px}body .modal-body #fcNoticePanel button{font-size:13px}}
+
+.fc-notice-count[hidden],.fc-mobile-photo[hidden]{display:none!important}
