@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "FinCasa — Wallace & Juliana",
-  "short_name": "FinCasa",
-  "description": "Gestão financeira do casal e lançamentos rápidos",
+  "name": "WJ • Wallace & Juliana",
+  "short_name": "WJ FinCasa",
+  "description": "Lançamentos rápidos, orçamento e insights financeiros de Wallace e Juliana",
   "start_url": "/?app=1",
   "scope": "/",
   "display": "standalone",
