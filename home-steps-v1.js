@@ -2,8 +2,14 @@
 (function(){
 'use strict';
 if(typeof document==='undefined')return;
-const CSS=`body.fc-guided-home{overflow:hidden!important}body.fc-guided-home main.main{height:100dvh;overflow-y:auto;overscroll-behavior:contain}body.fc-guided-home #inicio,body.fc-guided-home #home,body.fc-guided-home #dashboard{max-height:calc(100dvh - 155px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}@media(max-width:820px){body.fc-guided-home #inicio,body.fc-guided-home #home,body.fc-guided-home #dashboard{max-height:calc(100dvh - 205px)}}
-#fcStepBar{position:sticky;top:8px;z-index:60;margin:12px 0 16px;padding:13px 15px;background:#fff;border:1px solid #dbe5f0;border-radius:16px;box-shadow:0 5px 18px rgba(17,42,68,.08);color:#18334d}
+const CSS=`
+/* O scroll principal vem do documento e do container main; travar ambos somente neste modo. */
+html:has(body.fc-guided-home){height:100%!important;overflow:hidden!important;overscroll-behavior:none!important}
+body.fc-guided-home{height:100dvh!important;max-height:100dvh!important;overflow:hidden!important;overscroll-behavior:none!important}
+body.fc-guided-home .app{height:100dvh!important;max-height:100dvh!important;min-height:0!important;overflow:hidden!important}
+body.fc-guided-home main.main,body.fc-guided-home .main{height:100dvh!important;max-height:100dvh!important;min-height:0!important;overflow:hidden!important;overscroll-behavior:none!important}
+body.fc-guided-home #inicio,body.fc-guided-home #home,body.fc-guided-home #dashboard,body.fc-guided-home #visaoGeral{min-height:0!important;max-height:calc(100dvh - 155px)!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;scrollbar-width:thin}
+#fcStepBar{position:sticky;top:0;z-index:60;margin:12px 0 16px;padding:13px 15px;background:#fff;border:1px solid #dbe5f0;border-radius:16px;box-shadow:0 5px 18px rgba(17,42,68,.08);color:#18334d}
 #fcStepBar .fc-step-line{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 #fcStepBar .fc-step-title{font-size:15px;font-weight:850}
 #fcStepBar .fc-step-caption{font-size:12px;color:#65758b;margin-top:3px}
@@ -17,7 +23,7 @@ const CSS=`body.fc-guided-home{overflow:hidden!important}body.fc-guided-home mai
 #fcStepBar .fc-step-dot.on{background:#168c87}
 #fcStepBar .fc-mode{font-size:11px}
 .fc-home-step-hidden{display:none!important}
-@media(max-width:820px){#fcStepBar{position:relative;top:auto;margin:9px 0 12px;padding:12px}#fcStepBar .fc-step-buttons{width:100%;justify-content:space-between}#fcStepBar button{padding:10px}}
+@media(max-width:820px){body.fc-guided-home #inicio,body.fc-guided-home #home,body.fc-guided-home #dashboard,body.fc-guided-home #visaoGeral{max-height:calc(100dvh - 205px)!important}#fcStepBar{position:relative;top:auto;margin:9px 0 12px;padding:12px}#fcStepBar .fc-step-buttons{width:100%;justify-content:space-between}#fcStepBar button{padding:10px}}
 `;
 function install(){
  if(document.getElementById('fcStepBar'))return;
@@ -60,10 +66,10 @@ function install(){
    const mode=bar.querySelector('#fcStepMode');mode.textContent=compact?'Visão completa':'Por etapas';mode.setAttribute('aria-pressed',String(compact));
    bar.querySelector('#fcStepDots').innerHTML=compact?groups.map((_,i)=>'<span class="fc-step-dot '+(i<=index?'on':'')+'"></span>').join(''):'';
  }
- function move(diff){index=Math.max(0,Math.min(groups.length-1,index+diff));refresh();bar.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'});}
+ function move(diff){index=Math.max(0,Math.min(groups.length-1,index+diff));refresh();home.scrollTop=0;if(main)main.scrollTop=0;window.scrollTo(0,0);}
  bar.querySelector('#fcStepPrev').addEventListener('click',()=>move(-1));
  bar.querySelector('#fcStepNext').addEventListener('click',()=>move(1));
- bar.querySelector('#fcStepMode').addEventListener('click',()=>{compact=!compact;refresh()});
+ bar.querySelector('#fcStepMode').addEventListener('click',()=>{compact=!compact;refresh();if(compact){home.scrollTop=0;if(main)main.scrollTop=0;window.scrollTo(0,0)}});
  document.addEventListener('keydown',e=>{if(!compact||!home.contains(document.activeElement)||/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();move(1)}if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();move(-1)}});
  document.querySelectorAll('#sidebar a[href^="#"],.nav a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{const id=(a.getAttribute('href')||'').slice(1);if(id&&id!==home.id&&compact){compact=false;refresh()}}));
  refresh();
