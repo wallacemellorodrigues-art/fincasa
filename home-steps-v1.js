@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 if(typeof document==='undefined')return;
-const CSS=`
+const CSS=`body.fc-guided-home{overflow:hidden!important}body.fc-guided-home main.main{height:100dvh;overflow-y:auto;overscroll-behavior:contain}body.fc-guided-home #inicio,body.fc-guided-home #home,body.fc-guided-home #dashboard{max-height:calc(100dvh - 155px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}@media(max-width:820px){body.fc-guided-home #inicio,body.fc-guided-home #home,body.fc-guided-home #dashboard{max-height:calc(100dvh - 205px)}}
 #fcStepBar{position:sticky;top:8px;z-index:60;margin:12px 0 16px;padding:13px 15px;background:#fff;border:1px solid #dbe5f0;border-radius:16px;box-shadow:0 5px 18px rgba(17,42,68,.08);color:#18334d}
 #fcStepBar .fc-step-line{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 #fcStepBar .fc-step-title{font-size:15px;font-weight:850}
@@ -37,9 +37,11 @@ function install(){
  bar.innerHTML='<div class="fc-step-line"><div><div class="fc-step-title" id="fcStepTitle">Resumo financeiro</div><div class="fc-step-caption" id="fcStepCaption" aria-live="polite"></div></div><div class="fc-step-buttons"><button type="button" id="fcStepMode" aria-pressed="true">Visão completa</button><button type="button" id="fcStepPrev">← Anterior</button><button type="button" id="fcStepNext" class="fc-primary">Próximo →</button></div></div><div class="fc-step-dots" id="fcStepDots" aria-hidden="true"></div>';
  host.prepend(bar);
  // Preservar elementos existentes no DOM e seus eventos: nunca mover ou recriar cards.
- const count=Math.min(5,Math.ceil(parts.length/2));
+ const count=Math.min(parts.length,24);
  const groups=Array.from({length:count},()=>[]);
  parts.forEach((e,i)=>groups[Math.min(count-1,Math.floor(i*count/parts.length))].push(e));
+ const main=home.closest('main')||document.querySelector('main.main');
+ const siblings=main?[...main.querySelectorAll(':scope > section')].filter(e=>e!==home&&!e.contains(home)):[];
  let index=0,compact=true;
  const titleFor=(els,i)=>{
   const h=els.map(e=>e.matches('h1,h2,h3')?e:e.querySelector('h1,h2,h3')).find(Boolean);
@@ -49,6 +51,8 @@ function install(){
  const titles=groups.map(titleFor);
  function refresh(){
    groups.forEach((g,i)=>g.forEach(el=>el.classList.toggle('fc-home-step-hidden',compact&&i!==index)));
+   siblings.forEach(el=>el.classList.toggle('fc-home-step-hidden',compact));
+   document.body.classList.toggle('fc-guided-home',compact);
    bar.querySelector('#fcStepTitle').textContent=compact?titles[index]:'Visão financeira completa';
    bar.querySelector('#fcStepCaption').textContent=compact?'Etapa '+(index+1)+' de '+groups.length+' · use Anterior ou Próximo':'Todas as informações disponíveis na mesma página';
    bar.querySelector('#fcStepPrev').disabled=!compact||index===0;
@@ -61,6 +65,7 @@ function install(){
  bar.querySelector('#fcStepNext').addEventListener('click',()=>move(1));
  bar.querySelector('#fcStepMode').addEventListener('click',()=>{compact=!compact;refresh()});
  document.addEventListener('keydown',e=>{if(!compact||!home.contains(document.activeElement)||/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName||''))return;if(e.altKey&&e.key==='ArrowRight'){e.preventDefault();move(1)}if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();move(-1)}});
+ document.querySelectorAll('#sidebar a[href^="#"],.nav a[href^="#"]').forEach(a=>a.addEventListener('click',()=>{const id=(a.getAttribute('href')||'').slice(1);if(id&&id!==home.id&&compact){compact=false;refresh()}}));
  refresh();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(install,300),{once:true});
