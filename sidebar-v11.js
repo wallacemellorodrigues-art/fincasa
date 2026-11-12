@@ -64,3 +64,6 @@ function install(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});
 else install();
 })();
+
+/* Progressive home dashboard step navigation; isolated from finances and auth. */
+(function(){if(typeof document==='undefined')return;function load(){if(document.querySelector('script[data-fc-home-steps]'))return;const s=document.createElement('script');s.src='/home-steps-v1.js';s.defer=true;s.dataset.fcHomeSteps='1';document.head.appendChild(s)}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load()})();
